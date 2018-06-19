@@ -1,0 +1,14 @@
+#!/bin/bash 
+#SBATCH -J BN.q
+#SBATCH --nodes 128 
+#SBATCH -p medium
+#SBATCH --time 12:00:00
+#SBATCH -e stderr.txt
+
+export BG_MAPCOMMONHEAP=1
+export OMP_NUM_THREADS=1
+
+NPROCS=PROCS_HERE
+EXE_DIR=/gpfs/u/home/TSDM/TSDMluck/barn/qe-6.0/bin
+
+ srun -n $NPROCS $EXE_DIR/pw.x -nk KPT_HERE -bgrp BGRP_HERE -inp wfnq.in > wfnq.out

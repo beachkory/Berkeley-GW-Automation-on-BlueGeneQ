@@ -1,0 +1,74 @@
+#!/bin/bash 
+#SBATCH -J wfnscript
+#SBATCH --nodes 1
+#SBATCH -p debug
+#SBATCH --time 00:05:00
+#SBATCH --export BG_MAPCOMMONHEAP=1
+
+cd $SLURM_SUBMIT_DIR 
+
+source INP/Parameters
+cp INP/epsscript ./
+
+cat INP/wfn.in | sed -e "s@BANDS_HERE@$bands@g" -e "s@BN@$prefix@g" > 2.WFN/wfn.in
+cat 1.kshift/02_wfn_ksh.out >> 2.WFN/wfn.in
+cp INP/wfn.run 2.WFN
+cp -r 0.scf/$prefix.save 2.WFN
+
+cat INP/wfn.in | sed -e "s@BANDS_HERE@$bands@g" -e "s@BN@$prefix@g" > 3.WFNq/wfnq.in
+cat 1.kshift/03_wfn_qsh.out >> 3.WFNq/wfnq.in
+cp INP/wfnq.run 3.WFNq
+cp -r 0.scf/$prefix.save 3.WFNq
+
+cat INP/wfn.in | sed -e "s@BANDS_HERE@$bands@g" -e "s@BN@$prefix@g" > 4.WFNun/wfnun.in
+cat 1.kshift/04_wfn_ush.out >> 4.WFNun/wfnun.in
+cp INP/wfnun.run 4.WFNun
+cp -r 0.scf/$prefix.save 4.WFNun
+
+
+k=$(grep -A 1 "K_POINTS" 2.WFN/wfn.in |tail -1 | sed -e 's/^[[:space:]]*//')
+kq=$(grep -A 1 "K_POINTS" 3.WFNq/wfnq.in |tail -1 | sed -e 's/^[[:space:]]*//')
+kun=$(grep -A 1 "K_POINTS" 4.WFNun/wfnun.in |tail -1 | sed -e 's/^[[:space:]]*//')
+
+echo "K,Kq,Kun
+$k,$kq,$kun" > nks.csv
+
+cp INP/wfnpyscript.py ./
+sed -i -e "s@THRESH_HERE@$thresh@g" -e "s@BGRP_HERE@$bgrp@g" wfnpyscript.py
+
+python wfnpyscript.py > tmp 
+source tmp
+mkdir -p temps
+mv tmp	wfnpyscript.py nks.csv temps
+
+#Kproc, Kqproc, and Kunproc, are now defined
+sed -i -e "s@PROCS_HERE@$Kproc@g" -e "s@KPT_HERE@$K@g" -e "s@BGRP_HERE@$bgrp@g" 2.WFN/wfn.run
+sed -i -e "s@PROCS_HERE@$Kqproc@g" -e "s@KPT_HERE@$Kq@g" -e "s@BGRP_HERE@$bgrp@g" 3.WFNq/wfnq.run
+sed -i -e "s@PROCS_HERE@$Kunproc@g" -e "s@KPT_HERE@$Kun@g" -e "s@BGRP_HERE@$bgrp@g" 4.WFNun/wfnun.run
+
+sed -i "s@KPT_HERE@$K@g" 2.WFN/pw2bgw_wfn.run
+sed -i "s@KPT_HERE@$Kq@g" 3.WFNq/pw2bgw_wfnq.run
+sed -i "s@KPT_HERE@$Kun@g" 4.WFNun/pw2bgw_wfnun.run
+
+cd 2.WFN 
+WFNstr=$(sbatch wfn.run)
+WFNID=${WFNstr//[!0-9]/}
+PWWFNstr=$(sbatch -d afterok:$WFNID pw2bgw_wfn.run)
+PWWFNID=${PWWFNstr//[!0-9]/}
+cd ../
+
+cd 3.WFNq
+WFNqstr=$(sbatch wfnq.run)
+WFNqID=${WFNqstr//[!0-9]/}
+PWWFNqstr=$(sbatch -d afterok:$WFNqID pw2bgw_wfnq.run)
+PWWFNqID=${PWWFNqstr//[!0-9]/}
+cd ../
+
+cd 4.WFNun
+WFNunstr=$(sbatch wfnun.run)
+WFNunID=${WFNunstr//[!0-9]/}
+PWWFNunstr=$(sbatch -d afterok:$WFNunID pw2bgw_wfnun.run)
+PWWFNunID=${PWWFNunstr//[!0-9]/}
+cd ../
+
+sbatch -d afterok:$PWWFNID:$PWWFNqID epsscript

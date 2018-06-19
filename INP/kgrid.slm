@@ -1,0 +1,15 @@
+#!/bin/bash 
+#SBATCH -J BN.wfn
+#SBATCH --nodes 1
+#SBATCH -p debug
+#SBATCH --time 1:00:00
+#SBATCH -o log
+#SBATCH -e stderr.txt
+#SBATCH --export BG_MAPCOMMONHEAP=1
+
+DIR=/gpfs/u/home/TSDM/TSDMkrbc/barn-shared/BerkeleyGW-1.2.0/bin
+
+ srun -n 1 $DIR/kgrid.x 02_wfn_ksh.in 02_wfn_ksh.out 02_wfn_ksh.log
+ srun -n 1 $DIR/kgrid.x 03_wfn_qsh.in 03_wfn_qsh.out 03_wfn_qsh.log
+ srun -n 1 $DIR/kgrid.x 04_wfn_ush.in 04_wfn_ush.out 04_wfn_ush.log
+

@@ -1,0 +1,11 @@
+#!/bin/bash 
+#SBATCH -J BN.wfnqpw
+#SBATCH --nodes 16
+#SBATCH -p small
+#SBATCH --time 8:00:00
+#SBATCH -o log
+#SBATCH -e stderr.txt
+#SBATCH --export BG_MAPCOMMONHEAP=1
+
+NK=KPT_HERE
+ srun -n $NK  /gpfs/u/home/TSDM/TSDMluck/barn/qe-6.0/bin/pw2bgw.x -nk $NK < pw2bgw_wfnq.in &> pw2bgw_wfnq.out

@@ -1,0 +1,39 @@
+#!/bin/bash
+#SBATCH -J sigscript
+#SBATCH --nodes 1
+#SBATCH -p debug
+#SBATCH --time 00:05:00
+#SBATCH --export BG_MAPCOMMONHEAP=1
+
+cd $SLURM_SUBMIT_DIR 
+source INP/Parameters
+
+kun=$(grep -A 1 "K_POINTS" 4.WFNun/wfnun.in |tail -1 | sed -e 's/^[[:space:]]*//')
+
+sed -e "s@KPERPOOL_HERE@$kpoints_per_pool@g" -e "s@KPTS_HERE@$kun@g" INP/sigpyscript.py > sigpyscript.py
+
+python sigpyscript.py > sigtmp
+source sigtmp
+mv sigtmp sigpyscript.py temps/
+
+
+iter=0
+current=0
+past=0
+
+STR="" 
+for q in $NK; do 
+	((iter+=1)) 
+	((current=q))
+	mkdir -p 6.sigma-$iter
+	cp INP/sigma.inp INP/sigma.slm 6.sigma-$iter
+	sed -i "s@BN@$prefix$iter@g" 6.sigma-$iter/sigma.slm
+	cp 4.WFNun/WFN_inner 4.WFNun/vxc.dat 4.WFNun/RHO 5.epsilon/eps0mat.h5 5.epsilon/epsmat.h5 6.sigma-$iter 
+	awk '{print $1 "  " $2 "  " $3 "   1.0"}' 1.kshift/04_wfn_ush.out | sed -e '1,2d' | sed -n "$((1 + past)),$current p" >> 6.sigma-$iter/sigma.inp
+	echo "end" >> 6.sigma-$iter/sigma.inp
+	sed -i -e "s@BAND_MIN_HERE@$sigma_band_min@g" -e "s@BAND_MAX_HERE@$sigma_band_max@g" -e "s@BANDS_HERE@$bands@g" 6.sigma-$iter/sigma.inp
+	((past=current))
+	cd 6.sigma-$iter
+	echo $(sbatch sigma.slm) | tr -dc '0-9' >> ../temps/SigmaIDs
+	cd ../
+done

@@ -1,0 +1,8 @@
+band_index_min BAND_MIN_HERE
+band_index_max BAND_MAX_HERE
+cell_slab_truncation
+screening_semiconductor
+number_bands BANDS_HERE
+
+
+begin kpoints

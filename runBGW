@@ -1,0 +1,37 @@
+#!/bin/bash
+source INP/Parameters
+cp INP/wfnscript ./
+mkdir -p 0.scf 1.kshift 2.WFN 3.WFNq 4.WFNun
+cd INP
+cp scf.in scf.run ../0.scf
+cp 02_wfn_ksh.in 03_wfn_qsh.in 04_wfn_ush.in kgrid.slm ../1.kshift
+cp pw2bgw_wfn.in pw2bgw_wfn.run ../2.WFN
+cp pw2bgw_wfnq.in pw2bgw_wfnq.run ../3.WFNq
+cp pw2bgw_wfnun.in pw2bgw_wfnun.run ../4.WFNun
+
+cd ../
+
+echo "$kpt $kpt 1 0 0 0" >> 0.scf/scf.in
+
+sed -i "s@KPT_HERE@$kpt $kpt 1@g" 1.kshift/0*wfn*
+
+sed -i -e "s@KPT_HERE@$kpt@g" -e "s@BAND_HERE@$scfbands@g" *WFN*/pw2bgw_wfn*.in
+
+#REMEMBER TO DO THIS LAST AND ONLY ON FILES THAT ARE NOT IN INP
+for folder in */; do
+	if [ $folder != "INP" ]; then 
+		sed -i "s@PREFIX_HERE@$prefix@g" $folder/*
+	fi
+done
+
+cd 0.scf
+SCFstr=$(sbatch scf.run)
+SCFID=${SCFstr//[!0-9]/}
+
+cd ../1.kshift
+Kstr=$(sbatch kgrid.slm)
+KID=${Kstr//[!0-9]/}
+
+cd ..
+#echo "$SCFID $KID" > SlurmIDs
+sbatch -d afterok:$SCFID:$KID wfnscript 

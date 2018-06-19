@@ -1,0 +1,14 @@
+#!/bin/bash 
+#SBATCH -J BN.scf
+#SBATCH --nodes 2 
+#SBATCH -p debug
+#SBATCH --time 1:00:00
+#SBATCH -e stderr.txt
+
+export BG_MAPCOMMONHEAP=1
+export OMP_NUM_THREADS=1
+
+NPROCS=32
+EXE_DIR=/gpfs/u/home/TSDM/TSDMluck/barn/qe-6.0/bin
+
+ srun -n $NPROCS $EXE_DIR/pw.x -inp scf.in > scf.out

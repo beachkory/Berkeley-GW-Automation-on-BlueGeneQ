@@ -1,0 +1,26 @@
+#!/bin/bash 
+#SBATCH -J epsscript
+#SBATCH --nodes 1
+#SBATCH -p debug
+#SBATCH --time 00:05:00
+#SBATCH --export BG_MAPCOMMONHEAP=1
+
+cd $SLURM_SUBMIT_DIR 
+cp INP/sigscript ./
+source INP/Parameters
+
+
+mkdir -p 5.epsilon
+cp 2.WFN/WFN 3.WFNq/WFNq 5.epsilon
+cp INP/epsilon.* 5.epsilon
+
+awk '{print $1 "  " $2 "  " $3 "   1.0  0"}' 1.kshift/04_wfn_ush.out | sed -e '1,3d' >> 5.epsilon/epsilon.inp
+echo "end" >> 5.epsilon/epsilon.inp
+cd 5.epsilon
+
+Epsstr=$(sbatch epsilon.slm)
+EpsID=${Epsstr//[!0-9]/}
+
+cd ../
+
+sbatch -d afterok:$EpsID sigscript

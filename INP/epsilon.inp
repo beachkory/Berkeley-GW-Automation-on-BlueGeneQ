@@ -1,0 +1,6 @@
+epsilon_cutoff 10
+cell_slab_truncation
+restart
+
+begin qpoints
+0.001000000  0.000000000  0.000000000   1.0 1

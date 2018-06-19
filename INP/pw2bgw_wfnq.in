@@ -1,0 +1,13 @@
+&input_pw2bgw
+   prefix = 'BN'
+   real_or_complex = 2
+   wfng_flag = .true.
+   wfng_file = 'WFNq'
+   wfng_kgrid = .true.
+   wfng_nk1 = KPT_HERE
+   wfng_nk2 = KPT_HERE
+   wfng_nk3 = 1
+   wfng_dk1 = 0.501
+   wfng_dk2 = 0.5
+   wfng_dk3 = 0
+/

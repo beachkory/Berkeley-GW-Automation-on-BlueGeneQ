@@ -1,0 +1,37 @@
+&control
+    calculation  = 'scf'
+    restart_mode='from_scratch',
+    pseudo_dir   = '/gpfs/u/home/TSDM/TSDMkrbc/barn/Psuedopotentials/HGH'
+    outdir       = './'
+    prefix = 'BN'
+    tstress=.true.
+    tprnfor=.true.
+    wf_collect=.true.
+    forc_conv_thr=1e-4
+ /
+ &system
+    ibrav=4
+    celldm(1)=4.95, celldm(3)=7
+    nat=2
+    ntyp=2
+    nbnd=14
+    ecutwfc=95
+    occupations='smearing'
+    smearing = 'gaussian'
+    degauss=0.005
+ /
+ &electrons
+    electron_maxstep=1000
+    conv_thr = 1e-8,
+    mixing_beta=0.5,
+ /
+ &ions
+    ion_dynamics = 'bfgs'
+ /
+ATOMIC_SPECIES
+  B    10.81    B.pz-hgh.UPF
+  N    14.01    N.pz-hgh.UPF
+ATOMIC_POSITIONS {crystal}
+B        0.333333   0.666667   0.0000    1   1   1
+N        0.666667   0.333333   0.0000    1   1   1
+K_POINTS {automatic}

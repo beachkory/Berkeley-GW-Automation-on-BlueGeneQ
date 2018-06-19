@@ -1,0 +1,16 @@
+#!/bin/bash
+#SBATCH -J BN.epsilon
+#SBATCH --nodes 128
+#SBATCH -p medium
+#SBATCH --time 12:00:00
+#SBATCH -o log
+#SBATCH -e stderr.txt
+#SBATCH -i epsilon.inp
+#SBATCH --export BG_MAPCOMMONHEAP=1
+
+DIR=/gpfs/u/home/TSDM/TSDMkrbc/barn-shared/BerkeleyGW-1.2.0/bin
+
+ srun -n 2048 $DIR/epsilon.cplx.x &> epsilon.out
+
+
+

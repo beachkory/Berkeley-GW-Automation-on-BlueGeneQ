@@ -1,0 +1,12 @@
+#!/bin/bash
+prefix="BN"
+kpt="18" #kpoint grid dimension for nscf calculation
+scfbands="104"
+bands=$(($scfbands -1))
+thresh="200" #Max number of kpoint pools for parallelization
+bgrp="8" #Number of band groups for parallelization
+kpoints_per_pool="10" #Number of kpoints per pool in sigma.x calculation
+sigma_band_min="2" #Band index min for sigma.x
+sigma_band_max="6" #Band index max for sigma.x
+
+
