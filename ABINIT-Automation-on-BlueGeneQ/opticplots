@@ -1,0 +1,71 @@
+#!/bin/bash
+comp="111 112 211 222 313"
+width="3.11723"
+separation="20"
+orderofmag=".1"
+xrange="[0:6.5]"
+yrange="[0:10]"
+Axis="Y-Axis"
+neg="-"
+
+
+if [ $neg == "-" ]; then
+    StrType="Compression"
+    stype="neg"
+else
+    StrType="Expansion"
+    stype="pos"
+fi
+
+for q in $comp; do
+    cat > "optic.$stype.$q.gp" <<!
+reset;
+
+#tensor component
+comp="$q"
+#put a minus sign here when plotting negative strain
+n = "$neg"
+width = $width
+separation= $separation
+orderofmag = $orderofmag
+
+#set xrange $xrange
+#set yrange $yrange
+
+set title "MoS_2: Second Harmonic Generation (".comp.") vs $Axis Strain ($StrType)"
+set xlabel "Single Photon Energy (eV)"
+set ylabel "|X^{(2)}_{".comp."}| (10^{-6} esu)"
+
+fi = comp."/".comp."_"
+gp=".gp"
+p="% Strain"
+
+st0="0"; f0=fi.st0.gp; p0=st0.p
+!
+cat > tmp$q <<!
+#!/bin/bash
+!
+    ls -1 -- $q/*-* >>tmp$q
+    sed -i '2s/^/string="/' tmp$q
+    sed -i "$(wc -l tmp$q | cut -f1 -d' ') s@\$@\"@" tmp$q
+    for ind in `seq 1 $(wc -l tmp$q | cut -f1 -d' ')`; do
+        sed -i -e "$ind s@$q\/$q\_@@" -e "s@.gp@@g" tmp$q
+    done
+    source tmp$q
+    for j in $string; do echo $j; done | sort -nr > tmp2$q
+
+    for ind in `seq 1 $(wc -l tmp2$q | cut -f1 -d' ')`; do
+        sed -i -e "$ind s@^@st$ind=\"@" -e "$ind s@\$@\";  f$ind=fi.n.st$ind.gp; p$ind=n.st$ind.p@g" -e "s@-@@g" tmp2$q
+    done
+    cat tmp2$q >> optic.$stype.$q.gp
+
+cat > tmp3$q <<!
+plot f0 u 1:(\$2*separation*orderofmag/width) w l dt 5 lw 3 lt 8 title p0
+!
+    for ind in `seq 1 $(wc -l tmp2$q | cut -f1 -d' ')`; do
+        sed -i "s@\$@, f$ind u 1:(\$2*separation*orderofmag/width) w l title p$ind@g" tmp3$q
+    done
+    cat tmp3$q >> optic.$stype.$q.gp
+
+    rm tmp$q tmp2$q tmp3$q
+done

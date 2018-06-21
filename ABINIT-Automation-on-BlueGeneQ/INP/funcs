@@ -1,0 +1,137 @@
+#!/bin/bash
+#non-error-producing alternative to mkdir
+FUNC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PARAM_DIR=$FUNC_DIR
+
+. $PARAM_DIR/Parameters
+
+makeover() {
+if [ ! -e $1 ]; then
+    mkdir -p $1
+fi
+}
+copyfiles() {
+if [ $1 == SCF ]; then
+   echo "./scf.in ./"  
+elif [ $1 == WFC ]; then
+   echo "../SCF/scf_* ./"
+elif [ $1 == DDK ]; then
+   echo "../WFC/wfc_* ./"
+elif [ $1 == OPTICS ]; then
+   if [ $COMPONENTS -eq 1 ]; then
+      echo "../WFC/wfc_* ../DDK/ddk_* ./"
+   else
+      echo "../WFC/wfc_* ../DDK/ddk_* ./; cp ddk_xo_1WF11 ddk_xo_1WF10; cp ddk_xo_1WF11 ddk_xo_1WF12;" 
+   fi
+fi
+}
+skip() {
+if [ $1 == SCF ]; then
+   echo $SkipSCF
+elif [ $1 == WFC ]; then
+   echo $SkipWFC
+elif [ $1 == DDK ]; then
+   echo $SkipDDK
+elif [ $1 == OPTICS ]; then
+   echo 0
+fi
+}
+partition() {
+if [ $1 == SCF ]; then
+   echo $PartSCF
+elif [ $1 == WFC ]; then
+   echo $PartWFC
+elif [ $1 == DDK ]; then
+   echo $PartDDK
+elif [ $1 == OPTICS ]; then
+   echo $PartOPT
+fi
+}
+nodes() {
+if [ $1 == SCF ]; then
+   echo $SCF_NODES
+elif [ $1 == WFC ]; then
+   echo $WFC_NODES
+elif [ $1 == DDK ]; then
+   echo $DDK_NODES
+elif [ $1 == OPTICS ]; then
+   echo $OPT_NODES
+fi
+}
+procs() {
+if [ $1 == SCF ]; then
+   echo $SCF_PROC
+elif [ $1 == WFC ]; then
+   echo $WFC_PROC
+elif [ $1 == DDK ]; then
+   echo $DDK_PROC
+elif [ $1 == OPTICS ]; then
+   echo $OPT_PROC
+fi
+}
+runtime() {
+if [ $1 == SCF ]; then
+   echo $SCF_TIME
+elif [ $1 == WFC ]; then
+   echo $WFC_TIME
+elif [ $1 == DDK ]; then
+   echo $DDK_TIME
+elif [ $1 == OPTICS ]; then
+   echo $OPT_TIME
+fi
+}
+kpts() {
+if [ $1 == SCF ]; then
+   echo $SCF_KPT
+elif [ $1 == WFC ]; then
+   echo $WFC_KPT
+elif [ $1 == DDK ]; then
+   echo $DDK_KPT
+elif [ $1 == OPTICS ]; then
+   echo "0"
+fi
+}
+infile() {
+if [ $1 == SCF ]; then
+   echo "scf.in"
+elif [ $1 == WFC ]; then
+   echo "wfc.in"
+elif [ $1 == DDK ]; then
+   echo "ddk.in"
+elif [ $1 == OPTICS ]; then
+   echo "optic.in"
+fi
+}
+outfile() {
+if [ $1 == SCF ]; then
+   echo "slurm-\$SLURM_JOB_ID.out"
+elif [ $1 == WFC ]; then
+   echo "slurm-\$SLURM_JOB_ID.out"
+elif [ $1 == DDK ]; then
+   echo "slurm-\$SLURM_JOB_ID.out"
+elif [ $1 == OPTICS ]; then
+   echo "& optic.log"
+fi
+}
+filefile() {
+if [ $1 == SCF ]; then
+   echo "abinit.files"
+elif [ $1 == WFC ]; then
+   echo "abinit.files"
+elif [ $1 == DDK ]; then
+   echo "abinit.files"
+elif [ $1 == OPTICS ]; then
+   echo "optic.files"
+fi
+}
+exefile() {
+if [ $1 == SCF ]; then
+   echo "abinit"
+elif [ $1 == WFC ]; then
+   echo "abinit"
+elif [ $1 == DDK ]; then
+   echo "abinit"
+elif [ $1 == OPTICS ]; then
+   echo "optic"
+fi
+}

@@ -1,0 +1,127 @@
+#!/bin/bash
+percents=".1
+.2
+.3
+.4
+.5
+.6
+.7
+.8
+-.1
+-.2
+-.3
+-.4
+-.5
+-.6
+-.7
+-.8"
+
+#percents="0
+#.9
+#-.9
+#1.0
+#1.5
+#2.0
+#2.5
+#3.0
+#3.5
+#4.0
+#4.5
+#5.0
+#5.5
+#6.0
+#-1.0
+#-1.5
+#-2.0
+#-2.5
+#-3.0
+#-3.5
+#-4.0
+#-4.5
+#-5.0
+#-5.5
+#-6.0"
+
+files="relax
+scf
+wfc
+ddk"
+
+initc1="3.18352366"
+initc2="1.59176183"
+initc3="2.75701236"
+
+option=1 #0=relaxation, 1=runABINIT, 2=ChiAbs, 3=replace relaxed coordinates, 4=make POSCARs
+
+for percent in $percents; do
+	if [ $option -eq 0 ]; then
+		mkdir Str$percent
+		cp -r ./INP runABINIT Str$percent
+		sed -i "s/$initc1/$(echo "scale=10; $percent*$initc1/100 + $initc1" | bc)/g" Str$percent/INP/*
+		sed -i "s/$initc2/$(echo "scale=10; $percent*$initc2/100 + $initc2" | bc)/g" Str$percent/INP/*
+		sed -i "s/$initc3/$(echo "scale=10; $percent*$initc3/100 + $initc3" | bc)/g" Str$percent/INP/*
+		echo "scale=10; $percent*$initc/100 + $initc" | bc
+		mkdir Str$percent/RELAX
+		cd Str$percent/INP/ && cp relax.in abinit.files ABINIT.slm ../RELAX
+		cd ../RELAX
+		sbatch ABINIT.slm
+		cd ../../
+	fi
+	if [ $option -eq 1 ]; then
+		cd Str$percent
+#		rma
+#		rm DDK/* && rm OPTICS/*
+		cp ../runABINIT ./
+		cp ../INP/Parameters INP/
+		sed -i "s@NAME=\"MoS2\"@NAME=$(echo ${percent:0:6})@g" INP/Parameters
+		source runABINIT
+		cd ../
+	fi
+	if [ $option -eq 2 ]; then
+		mkdir -p ChiAbs
+		cp Str$percent/OPTICS/optic_0001_0001_0001-ChiAbs.out ChiAbs/111_$percent.gp
+		cp Str$percent/OPTICS/optic_0001_0001_0002-ChiAbs.out ChiAbs/112_$percent.gp
+		cp Str$percent/OPTICS/optic_0002_0001_0001-ChiAbs.out ChiAbs/211_$percent.gp
+		cp Str$percent/OPTICS/optic_0003_0001_0003-ChiAbs.out ChiAbs/313_$percent.gp
+		cp Str$percent/OPTICS/optic_0002_0002_0002-ChiAbs.out ChiAbs/222_$percent.gp
+		cd ChiAbs
+		mkdir -p 111 112 211 313 222
+		mv 111* 111
+		mv 112* 112
+		mv 211* 211
+		mv 313* 313
+		mv 222* 222
+		cd ../
+	fi
+
+	if [ $option -eq 3 ]; then
+	   cd Str$percent/INP
+           cp ../RELAX/relax.out ./
+           grep -A 2 "xred" relax.out | tail -3 > tmp
+           sed -i "s/xred/    /g" tmp
+           for q in $files; do
+        	cp $q.in $q.in.old
+        	grep -A 16 "# PARALLIZATION" $q.in.old > $q.in
+        	cat tmp >> $q.in
+        	grep -A 1000 "#KPOINTS" $q.in.old >> $q.in
+        	sed -i "s/                       / /g" $q.in
+           done
+           cd ../../
+	fi
+
+	if [ $option -eq 4 ]; then
+           cd Str$percent/INP
+           cat > ../../Vasp/Str$percent.vasp <<!
+MoS2_$percent
+1
+!
+	   grep -A 3 "rprim" scf.in | tail -3 >> ../../Vasp/Str$percent.vasp
+	cat >> ../../Vasp/Str$percent.vasp <<!
+Mo S
+1 2
+Direct
+!
+	   grep -A 3 "xred" scf.in | tail -3 >> ../../Vasp/Str$percent.vasp
+           cd ../../
+        fi
+done

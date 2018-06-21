@@ -1,0 +1,60 @@
+#!/bin/bash
+EXE=/gpfs/u/home/TSDM/TSDMluck/scratch/abinit_test/abinit-8.0.8/src/98_main #Executable Directory
+PSEUDO1=/gpfs/u/home/TSDM/TSDMluck/barn/Pseudo/ABINIT/PAW/W.LDA_PW-JTH.xml
+PSEUDO2=/gpfs/u/home/TSDM/TSDMluck/barn/Pseudo/ABINIT/PAW/S.LDA_PW-JTH.xml
+NAME="WS2"
+
+COMPONENTS=1 #If 1, 3 components are calculated for the response function direction
+
+SkipSCF=0
+SkipWFC=0
+SkipDDK=0
+
+#Parallelization Variables
+
+SCF_NODES=16
+SCF_PROC=74
+SCF_TIME="04:00:00"
+SCF_KPT="12 12 1" ##Substitutes this string following "ngkpt" in input file
+PartSCF="small"
+
+WFC_NODES=128
+WFC_PROC=512
+WFC_TIME="04:00:00"
+WFC_KPT="48 48 1" ##Substitutes this string following "ngkpt" in input file
+PartWFC="medium"
+
+paral_ddk=0 #parallelizes DDKs if 1, runs in series if 0
+DDK_NODES=128  #make this 3 times the corresponding number of processors
+DDK_NODES_PJ=$(echo $DDK_NODES/3 | bc)  #nodes per DDK job
+DDK_PROC=256  #number of processors per DDK component
+DDK_TIME="07:00:00"
+DDK_KPT="48 48 1" ##Substitutes this string following "ngkpt" in input file
+PartDDK="medium"
+
+OPT_NODES=32
+OPT_PROC=256
+OPT_TIME="00:20:00"
+PartOPT="small"
+
+#Filenames
+scffls="scf.in
+scf.out
+scf_xi
+scf_xo
+scf_tmp"
+wfcfls="wfc.in
+wfc.out
+scf_xo
+wfc_xo
+wfc_tmp"
+ddkfls="ddk.in
+ddk.out
+wfc_xo
+ddk_xo
+ddk_tmp"
+
+Folder_Names="SCF
+WFC
+DDK
+OPTICS"

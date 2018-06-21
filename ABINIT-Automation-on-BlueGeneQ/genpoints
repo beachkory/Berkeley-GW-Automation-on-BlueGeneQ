@@ -1,0 +1,20 @@
+#!/bin/bash
+#Kory Beach 3/20/2017
+#Script to generate "num" evenly spaced points between "min" and "max"
+#Outputs to file "gen.out"
+
+min="-0.5"
+max="-0.484375"
+num="12"
+
+spacing=$(echo "scale=7; ($max-($min))/$num "| bc)
+
+echo $min > gen.out
+
+for a in `seq 1 $num`;
+do
+   echo $(echo "scale=7; $(cat gen.out | tail -1)+$spacing"| bc) >> gen.out
+
+done
+
+

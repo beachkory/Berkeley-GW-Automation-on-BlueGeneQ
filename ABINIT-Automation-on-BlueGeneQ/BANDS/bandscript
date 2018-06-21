@@ -1,0 +1,35 @@
+#!/bin/bash
+files=$(ls band0*)
+ind=1
+kval="0.0"
+a="0.5"
+b="0.372678"
+c="0.471405"
+npts1=24
+npts2=48
+npts3=72
+
+aspace=$(echo "scale=10; $a/$npts1" | bc)
+bspace=$(echo "scale=10; $b/$npts1" | bc)
+cspace=$(echo "scale=10; $c/$npts1" | bc)
+
+rm band.dat.gnu
+
+for q in $files; do
+	for m in $(cat $q); do
+		echo "$kval	$m" >>	band.dat.gnu
+		if [ $ind -le $npts1 ]; then 
+			kval=$(echo "scale=10; $kval+$aspace" | bc)
+		fi
+		if [ $ind -le $npts2 -a $ind -gt $npts1 ]; then 
+			kval=$(echo "scale=10; $kval+$bspace" | bc)
+		fi
+		if [ $ind -le $npts3 -a $ind -gt $npts2 ]; then 
+			kval=$(echo "scale=10; $kval+$cspace" | bc)
+		fi
+		ind=$((ind+1))
+	done
+	ind=$((1))
+	kval="0.0"
+	printf "\n" >> band.dat.gnu
+done

@@ -1,0 +1,33 @@
+#!/bin/bash
+files="relax
+scf
+wfc
+ddk"
+percents=0"
+0.5       
+-0.5      
+1.0       
+-1.0      
+-1.5      
+1.5       
+2.0       
+-2.0      
+2.5       
+-2.5
+3.0
+-3.0"
+
+for i in $percents; do
+   cd Str$i/INP
+   cp ../RELAX/relax.out ./
+   grep -A 2 "xred" relax.out | tail -3 > tmp
+   sed -i "s/xred/    /g" tmp
+   for q in $files; do
+	cp $q.in $q.in.old
+	grep -A 16 "# PARALLIZATION" $q.in.old > $q.in
+	cat tmp >> $q.in
+	grep -A 1000 "#KPOINTS" $q.in.old >> $q.in
+	sed -i "s/                       / /g" $q.in
+   done
+   cd ../../
+done

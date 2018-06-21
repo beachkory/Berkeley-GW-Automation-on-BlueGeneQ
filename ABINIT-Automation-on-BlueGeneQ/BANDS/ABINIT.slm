@@ -1,0 +1,12 @@
+#!/bin/bash 
+#SBATCH -J xm.25bds
+#SBATCH --nodes 10 
+#SBATCH -p small 
+#SBATCH --time 01:00:00
+#SBATCH -o log
+#SBATCH -e stderr.txt
+#SBATCH -i abinit.files 
+#SBATCH --export BG_MAPCOMMONHEAP=1
+
+cp ../WFC/wfc_* ./
+ srun -n 219 /gpfs/u/home/TSDM/TSDMluck/scratch/abinit_test/abinit-8.0.8/src/98_main/abinit < abinit.files  >slurm-$SLURM_JOB_ID.out

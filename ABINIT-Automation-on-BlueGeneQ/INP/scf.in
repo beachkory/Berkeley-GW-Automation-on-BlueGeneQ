@@ -1,0 +1,65 @@
+# PARALLIZATION
+autoparal 1
+mem_test 0
+chkprim 0
+#DEFINE GEOMETRY
+acell 1.88972599 1.88972599  1.88972599
+rprim
+3.1328125000 0 0
+-1.5664062500 2.71309521023 0
+0.0000000000   0.0000000000  20.0000000000
+
+natom 3
+ntypat 2
+znucl 74 16
+typat 1*1 2*2
+
+xred
+ 3.3331851737E-01  6.6666008063E-01  1.5385519283E-01
+ 6.6673755868E-01  3.3326677230E-01  2.3173669914E-01
+ 6.6661052096E-01  3.3340646006E-01  7.5958108027E-02
+#KPOINTS
+ngkpt 12 12 1
+nshiftk 1
+shiftk 0.0 0.0 0.0
+
+#CALCULATION DETAILS
+ecut 10.0
+pawecutdg 12.0
+nstep 100
+diemac 3.0
+occopt 7
+tsmear 0.0025
+ngfft   18      18     108
+
+#scf
+ionmov 0
+
+#scf + relax
+toldfe 3.67647058823529E-08
+kptopt 1
+
+#relaxation
+#tolmxf 1E-4
+#ntime 1000
+#ionmov 2
+
+#wfc
+#iscf -2
+#irdden 1
+
+#wfc + ddk
+#ionmov 0
+#nband 78
+#tolwfr  1.e-18
+#kptopt 3
+
+#ddk
+#iscf -3
+#irdwfk 1
+#nqpt  1
+#qpt  0.0d0 0.0d0 0.0d0
+#rfdir 1 1 1
+#rfelfd  2
+#nline 0
+#prtwf 3

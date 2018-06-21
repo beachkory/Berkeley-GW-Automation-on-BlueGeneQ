@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH -J relax
+#SBATCH --nodes 16
+#SBATCH -p small
+#SBATCH --time 04:00:00
+#SBATCH -o log
+#SBATCH -e stderr.txt
+#SBATCH -i abinit.files
+#SBATCH --export BG_MAPCOMMONHEAP=1
+
+ srun -n 74  /gpfs/u/home/TSDM/TSDMluck/scratch/abinit_test/abinit-8.0.8/src/98_main/abinit < abinit.files >slurm-$SLURM_JOB_ID.out

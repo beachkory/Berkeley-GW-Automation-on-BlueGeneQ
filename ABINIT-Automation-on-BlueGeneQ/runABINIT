@@ -1,0 +1,130 @@
+#!/bin/bash
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   #Directory of operation for this script.
+FDIR=$DIR/INP #Directory where all input files, parameter files, and functions are located
+
+. $FDIR/Parameters
+. $FDIR/funcs
+
+#Creating Directories
+makeover $DIR/SCF; makeover $DIR/WFC; makeover $DIR/DDK; makeover $DIR/OPTICS
+
+#Creating .files inputs
+if [ $SkipSCF -eq 0 ]; then
+   cat > $DIR/SCF/abinit.files <<!
+$scffls
+$PSEUDO1
+$PSEUDO2
+!
+fi
+if [ $SkipWFC -eq 0 ]; then
+   cat > $DIR/WFC/abinit.files <<!
+$wfcfls
+$PSEUDO1
+$PSEUDO2
+!
+fi
+if [ $SkipDDK -eq 0 ]; then
+   cat > $DIR/DDK/abinit.files <<!
+$ddkfls
+$PSEUDO1
+$PSEUDO2
+!
+fi
+cp $FDIR/optic.files $FDIR/optic.in $DIR/OPTICS
+
+for folder in $Folder_Names; do
+   if [ $(skip $folder) == "0" ]; then
+      if [ "$(kpts $folder)" != "0" ]; then
+         #Inserts k-points from Parameters file
+         sed -r "s@(ngkpt).*@\1 $(kpts $folder)@g" $FDIR/$(infile $folder)> $DIR/$folder/$(infile $folder)
+      fi
+#Creates SLURM run files
+      cat > $DIR/$folder/ABINIT.slm << !
+#!/bin/bash 
+#SBATCH -J $NAME$folder
+#SBATCH --nodes $(nodes $folder) 
+#SBATCH -p $(partition $folder) 
+#SBATCH --time $(runtime $folder)
+#SBATCH -o log
+#SBATCH -e stderr.txt
+#SBATCH -i $(filefile $folder) 
+#SBATCH --export BG_MAPCOMMONHEAP=1
+
+cp $(copyfiles $folder)
+!
+
+	if [ $folder == "DDK" -a $COMPONENTS -eq 1 ]; then
+		if [ $paral_ddk == 0 ]; then
+			cat >> $DIR/$folder/ABINIT.slm << !
+srun -n $(procs $folder) $EXE/$(exefile $folder) < $(filefile $folder)1  >$(outfile $folder)1 
+srun -n $(procs $folder) $EXE/$(exefile $folder) < $(filefile $folder)2  >$(outfile $folder)2
+srun -n $(procs $folder) $EXE/$(exefile $folder) < $(filefile $folder)3  >$(outfile $folder)3
+!
+		elif [ $paral_ddk == 1 ]; then
+			cat >> $DIR/$folder/ABINIT.slm << !
+srun --exclusive -N$DDK_NODES_PJ -n $(procs $folder) $EXE/$(exefile $folder) < $(filefile $folder)1  >$(outfile $folder)1 & 
+srun --exclusive -N$DDK_NODES_PJ -n $(procs $folder) $EXE/$(exefile $folder) < $(filefile $folder)2  >$(outfile $folder)2 &
+srun --exclusive -N$DDK_NODES_PJ -n $(procs $folder) $EXE/$(exefile $folder) < $(filefile $folder)3  >$(outfile $folder)3 &
+wait
+!
+		fi
+	else
+		cat >> $DIR/$folder/ABINIT.slm << ! 
+srun -n $(procs $folder) $EXE/$(exefile $folder) < $(filefile $folder)  >$(outfile $folder)
+!
+	fi
+   fi
+done
+
+#Submits SCF batch script
+cd $DIR/SCF
+if [ $SkipSCF -eq 0 ]; then
+   SCFstr=$(sbatch ABINIT.slm)
+   SCFID=${SCFstr//[!0-9]/}
+fi
+
+#Submits WFC batch script
+cd ../WFC
+if [ $SkipWFC -eq 0 ]; then   
+   if [ $SkipSCF -eq 0 ]; then
+      WFCstr=$(sbatch -d afterok:$SCFID ABINIT.slm)
+      WFCID=${WFCstr//[!0-9]/}
+   else
+      WFCstr=$(sbatch ABINIT.slm)
+      WFCID=${WFCstr//[!0-9]/}
+   fi
+fi
+
+#Submits DDK batch script-- Depending on the value of $COMPONENTS it will either perform 1 or 3 calculations
+cd ../DDK
+if [ $SkipDDK -eq 0 ]; then
+   if [ $COMPONENTS -eq 1 ]; then
+      
+       sed -r 's/(rfdir).*/\1 1 0 0/' ddk.in > ddk.in1
+       sed -e "s/ddk.in/ddk.in1/g" -e "s/ddk_tmp/ddk_tmp1/g" -e "s/ddk.out/ddk.out1/g" abinit.files > abinit.files1
+
+       sed -r 's/(rfdir).*/\1 0 1 0/' ddk.in > ddk.in2
+       sed -e "s/ddk.in/ddk.in2/g" -e "s/ddk_tmp/ddk_tmp2/g" -e "s/ddk.out/ddk.out2/g" abinit.files > abinit.files2
+
+       sed -r 's/(rfdir).*/\1 0 0 1/' ddk.in > ddk.in3
+       sed -e "s/ddk.in/ddk.in3/g" -e "s/ddk_tmp/ddk_tmp3/g" -e "s/ddk.out/ddk.out3/g" abinit.files > abinit.files3
+
+       if [ $SkipWFC -eq 0 ]; then
+          DDKstr=$(sbatch -d afterok:$WFCID ABINIT.slm)
+          DDKID=${DDKstr//[!0-9]/}
+       else
+          DDKstr=$(sbatch ABINIT.slm)
+          DDKID=${DDKstr//[!0-9]/}
+       fi
+
+       cd ../OPTICS                        
+       sbatch -d afterok:$DDKID ABINIT.slm
+       cd ..
+   else
+       DDKstr=$(sbatch -d afterok:$WFCID ABINIT.slm)
+       DDKID=${DDKstr//[!0-9]/}
+       cd ../OPTICS
+       sbatch -d afterok:$DDKID ABINIT.slm
+       cd ..
+   fi
+fi

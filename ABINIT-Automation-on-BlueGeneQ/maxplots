@@ -1,0 +1,13 @@
+#!/bin/bash
+comp="111 112 211 222 313"
+energy1="1.502068"
+round1=$(echo ${energy1:0:3})
+energy2="3.004137"
+round2=$(echo ${energy2:0:3})
+
+for q in $comp; do
+	grep $energy1 $q/* > max.$q.$round1.txt
+	sed -i -e "s@$q/$q\_@@g" -e "s@.gp:       @   @g" max.$q.$round1.txt
+	grep $energy2 $q/* > max.$q.$round2.txt
+	sed -i -e "s@$q/$q\_@@g" -e "s@.gp:       @   @g" max.$q.$round2.txt
+done
